@@ -3,7 +3,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:allowBackup="false"
-        android:label="SMS-IA"
+        android:label="SMS-IA V2"
+        android:icon="@drawable/ic_steve_launcher"
+        android:roundIcon="@drawable/ic_steve_launcher"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true">
