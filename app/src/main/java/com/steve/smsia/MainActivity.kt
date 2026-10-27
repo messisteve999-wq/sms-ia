@@ -21,9 +21,9 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 class MainActivity : Activity() {
-    private val bg = Color.rgb(12, 25, 31)
-    private val panel = Color.rgb(24, 42, 48)
-    private val mint = Color.rgb(0, 200, 150)
+    private val bg = Color.rgb(8, 17, 24)
+    private val panel = Color.rgb(24, 39, 49)
+    private val mint = Color.rgb(0, 220, 165)
     private lateinit var apiKey: EditText
     private lateinit var incoming: EditText
     private lateinit var contact: EditText
@@ -92,9 +92,30 @@ class MainActivity : Activity() {
             toast("Réglages enregistrés sur ce téléphone")
         }
 
-        section(root, "6. Suggestions Gemini")
+        section(root, "6. Fenêtre flottante")
+        button(root, "Activer / afficher la bulle SMS-IA") {
+            if (!Settings.canDrawOverlays(this)) {
+                startActivity(
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    )
+                )
+            } else {
+                startService(Intent(this, FloatingAssistantService::class.java))
+                toast("Bulle SMS-IA activée")
+            }
+        }
+        button(root, "Masquer la bulle SMS-IA") {
+            stopService(Intent(this, FloatingAssistantService::class.java))
+            toast("Bulle SMS-IA arrêtée")
+        }
+
+        section(root, "7. Suggestions Gemini")
         incoming = EditText(this).apply { hint = "Colle ici le message reçu…"; minLines = 3; gravity = Gravity.TOP; setTextColor(Color.WHITE); setHintTextColor(Color.GRAY); setBackgroundColor(panel); setPadding(12, 12, 12, 12) }
         root.addView(incoming, LinearLayout.LayoutParams(-1, ViewGroup.LayoutParams.WRAP_CONTENT))
+        incoming.setText(intent.getStringExtra("floating_message") ?: "")
+
         button(root, "Générer 3 réponses") { generateReplies() }
         result = TextView(this).apply { text = "Les réponses apparaîtront ici."; textSize = 15f; setTextColor(Color.WHITE); setPadding(14, 14, 14, 14); setBackgroundColor(panel) }
         root.addView(result, matchWrap())
@@ -103,6 +124,9 @@ class MainActivity : Activity() {
         }
         button(root, "Tester WhatsApp") { openApp("com.whatsapp") }
         button(root, "Tester Messenger") { openApp("com.facebook.orca") }
+        if (intent.getBooleanExtra("floating_generate", false)) {
+            incoming.post { generateReplies() }
+        }
         root.addView(TextView(this).apply { text = "Limites : l'accès aux notifications peut aider à lire certains aperçus. L'envoi direct n'est possible que si l'application source expose une action de réponse compatible. Snapchat et Facebook ne sont pas garantis. Aucun message n'est envoyé silencieusement par ce prototype."; setTextColor(Color.LTGRAY); textSize = 12f; setPadding(0, 16, 0, 0) })
     }
 
@@ -144,7 +168,20 @@ class MainActivity : Activity() {
         return seek
     }
     private fun section(root: LinearLayout, text: String) { root.addView(TextView(this).apply { this.text = text; textSize = 19f; typeface = Typeface.DEFAULT_BOLD; setTextColor(mint); setPadding(0, 22, 0, 9) }) }
-    private fun button(root: LinearLayout, text: String, action: () -> Unit) { root.addView(Button(this).apply { this.text = text; setOnClickListener { action() } }, matchWrap()) }
+    private fun button(root: LinearLayout, text: String, action: () -> Unit) {
+        root.addView(Button(this).apply {
+            this.text = text
+            isAllCaps = false
+            textSize = 15f
+            setTextColor(Color.rgb(8, 25, 29))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(mint)
+                cornerRadius = 24f
+            }
+            setPadding(12, 8, 12, 8)
+            setOnClickListener { action() }
+        }, matchWrap())
+    }
     private fun matchWrap() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 8 }
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_LONG).show()
     private fun openApp(pkg: String) { val launch = packageManager.getLaunchIntentForPackage(pkg); if (launch != null) startActivity(launch) else toast("Application non installée ou inaccessible.") }
