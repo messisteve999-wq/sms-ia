@@ -1,5 +1,4 @@
-
-name: Build SMS IA APK
+name: Build Android APK
 
 on:
   push:
@@ -8,37 +7,32 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Récupérer le projet
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Installer Java 17
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Installer Gradle
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          gradle-version: '8.13'
-
-      - name: Installer Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Installer les composants Android
+      - name: Install Android SDK components
         run: |
+          sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-          yes | sdkmanager --licenses || true
 
-      - name: Compiler l'APK
-        run: gradle --no-daemon --max-workers=1 assembleDebug
+      - name: Build APK
+        run: gradle --no-daemon assembleDebug
 
-      - name: Publier l'APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: SMS-IA-debug-APK
+          name: application-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
